@@ -1,0 +1,434 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ USUARIOS Y AUTENTICACIÓN ============
+
+enum UserRole {
+  ALUMNO
+  CENTRO
+  EMPRESA
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+  ELIMINADO
+}
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique @db.VarChar(255)
+  password          String       @db.VarChar(255)
+  firstName         String       @db.VarChar(100)
+  lastName          String       @db.VarChar(100)
+  phone             String?      @db.VarChar(20)
+  role              UserRole     @default(ALUMNO)
+  status            UserStatus   @default(ACTIVO)
+  profileImage      String?      // URL a imagen
+  bio               String?      @db.Text
+  location          String?      @db.VarChar(255)
+  birthDate         DateTime?
+  isVerified        Boolean      @default(false)
+  verificationToken String?      @unique
+
+  // Relaciones
+  studentProfile    StudentProfile?
+  enterpriseProfile EnterpriseProfile?
+  centerProfile     CenterProfile?
+
+  // Posts y actividad
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  
+  // Conexiones
+  followerOf        Connection[] @relation("follower")
+  followingTo       Connection[] @relation("following")
+
+  // Mensajería
+  sentMessages      Message[]    @relation("sender")
+  receivedMessages  Message[]    @relation("receiver")
+  conversations     Conversation[]
+
+  // Actividades
+  activities        Activity[]
+
+  // Notificaciones
+  notifications     Notification[]
+
+  // URLs
+  linkedinUrl       String?
+  portfolioUrl      String?
+
+  // Timestamps
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  lastLogin         DateTime?
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+// ============ PERFILES ESPECÍFICOS ============
+
+model StudentProfile {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Datos académicos
+  cicle             String?      @db.VarChar(100)  // Ciclo formativo
+  specialization    String?      @db.VarChar(100)  // Especialidad
+  courseYear        Int?                           // Año académico
+  graduationYear    Int?
+
+  // Experiencia
+  experience        String?      @db.Text
+  skills            String?      @db.Text          // JSON array
+  projects          String?      @db.Text          // JSON array
+
+  // CV y documentos
+  cvUrl             String?
+  certificatesUrl   String?      // JSON array de URLs
+
+  // Búsqueda de empleo
+  seekingJob        Boolean      @default(false)
+  jobPreferences    String?      @db.Text          // JSON
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([cicle])
+}
+
+model EnterpriseProfile {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Datos empresa
+  companyName       String       @db.VarChar(255)
+  industry          String?      @db.VarChar(100)
+  website           String?      @db.VarChar(255)
+  employees         Int?
+  description       String?      @db.Text
+
+  // Ubicación
+  address           String?      @db.Text
+  city              String?      @db.VarChar(100)
+  province          String?      @db.VarChar(100)
+  coordinates       String?      // JSON: {lat, lng}
+
+  // Ofertas de empleo
+  jobOffers         JobOffer[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model CenterProfile {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Datos del centro
+  centerName        String       @db.VarChar(255)
+  code              String?      @unique @db.VarChar(50)
+  
+  // Ubicación
+  address           String?      @db.Text
+  city              String?      @db.VarChar(100)
+  province          String?      @db.VarChar(100)
+  coordinates       String?      // JSON: {lat, lng}
+
+  // Ciclos ofertados
+  cicles            String?      @db.Text          // JSON array
+
+  // Contacto
+  director          String?      @db.VarChar(255)
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+// ============ RED SOCIAL: POSTS Y COMENTARIOS ============
+
+model Post {
+  id                String       @id @default(cuid())
+  authorId          String
+  author            User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content           String       @db.Text
+  imageUrl          String?
+  
+  // Metadatos
+  likeCount         Int          @default(0)
+  commentCount      Int          @default(0)
+  
+  // Relaciones
+  comments          Comment[]
+  likes             Like[]
+
+  visibility        String       @default("PUBLIC")  // PUBLIC, PRIVATE, FRIENDS_ONLY
+  isPinned          Boolean      @default(false)
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id                String       @id @default(cuid())
+  postId            String
+  post              Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId          String
+  author            User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content           String       @db.Text
+  likeCount         Int          @default(0)
+
+  likes             Like[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Like {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId            String?
+  post              Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  commentId         String?
+  comment           Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime     @default(now())
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([userId])
+}
+
+// ============ CONEXIONES (FOLLOW SYSTEM) ============
+
+model Connection {
+  id                String       @id @default(cuid())
+  followerId        String
+  follower          User         @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId       String
+  following         User         @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  status            String       @default("ACTIVE")  // ACTIVE, BLOCKED
+  createdAt         DateTime     @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// ============ MENSAJERÍA ============
+
+model Conversation {
+  id                String       @id @default(cuid())
+  
+  participantIds    String[]     // Array de user IDs
+  participants      User[]       // Relación many-to-many implícita
+
+  messages          Message[]
+
+  isGroup           Boolean      @default(false)
+  groupName         String?      @db.VarChar(255)
+  groupImage        String?
+
+  lastMessageAt     DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([participantIds])
+}
+
+model Message {
+  id                String       @id @default(cuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId          String
+  sender            User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId       String
+  recipient         User         @relation("receiver", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  content           String       @db.Text
+  imageUrl          String?
+  
+  isRead            Boolean      @default(false)
+  readAt            DateTime?
+
+  createdAt         DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([createdAt])
+}
+
+// ============ BOLSA DE EMPLEO ============
+
+enum JobOfferType {
+  PRACTICAS
+  EMPLEO
+  BECA
+}
+
+enum JobOfferStatus {
+  ABIERTA
+  CERRADA
+  CANCELADA
+}
+
+model JobOffer {
+  id                String       @id @default(cuid())
+  enterpriseId      String
+  enterprise        EnterpriseProfile @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+
+  title             String       @db.VarChar(255)
+  description       String       @db.Text
+  requirements      String?      @db.Text          // JSON array
+
+  position          String?      @db.VarChar(100)
+  type              JobOfferType @default(EMPLEO)
+  status            JobOfferStatus @default(ABIERTA)
+
+  salary            String?      @db.VarChar(100)
+  location          String?      @db.VarChar(255)
+  remote            Boolean      @default(false)
+
+  ciclesRequired    String?      @db.Text          // JSON array
+  experience        String?
+
+  applications      JobApplication[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  expiresAt         DateTime?
+
+  @@index([enterpriseId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ApplicationStatus {
+  PENDIENTE
+  REVISADA
+  ENTREVISTA
+  ACEPTADA
+  RECHAZADA
+}
+
+model JobApplication {
+  id                String       @id @default(cuid())
+  jobOfferId        String
+  jobOffer          JobOffer     @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  studentId         String       // De Student profile
+  
+  coverLetter       String?      @db.Text
+  status            ApplicationStatus @default(PENDIENTE)
+
+  appliedAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([jobOfferId, studentId])
+  @@index([jobOfferId])
+  @@index([studentId])
+}
+
+// ============ ACTIVIDADES Y NOTIFICACIONES ============
+
+enum ActivityType {
+  POST_CREATED
+  POST_LIKED
+  COMMENT_ADDED
+  USER_FOLLOWED
+  JOB_APPLIED
+  MESSAGE_RECEIVED
+}
+
+model Activity {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              ActivityType
+  description       String       @db.Text
+  targetId          String?      // ID del post, user, etc.
+  targetType        String?      // 'POST', 'USER', 'JOB_OFFER', etc.
+
+  createdAt         DateTime     @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              String       @db.VarChar(50)   // 'like', 'comment', 'follow', 'message'
+  title             String       @db.VarChar(255)
+  message           String       @db.Text
+  
+  actorId           String?      // Usuario que causó la notificación
+  targetId          String?      // Post, comment, etc.
+  relatedData       String?      @db.Text          // JSON con datos adicionales
+
+  isRead            Boolean      @default(false)
+  readAt            DateTime?
+
+  createdAt         DateTime     @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============ AUDITORÍA ============
+
+model AuditLog {
+  id                String       @id @default(cuid())
+  userId            String?     // Quién hizo la acción
+  action            String       @db.VarChar(100)   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity            String       @db.VarChar(100)   // Qué entidad modificó (User, Post, etc.)
+  entityId          String?      // ID de la entidad
+  changes           String?      @db.Text           // JSON con cambios
+  ipAddress         String?      @db.VarChar(45)
+  userAgent         String?      @db.Text
+  
+  createdAt         DateTime     @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

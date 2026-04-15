@@ -1,306 +1,443 @@
-import { useState } from "react";
-import { centros, alumnos, empresas, noticias } from "../data/datos";
-import { Badge, Avatar, Card, Button, SectionTitle, NavBar, PageWrapper, StatCard } from "../components/UI";
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import { useFeed, useConnections, useUserSearch } from '../hooks';
+import UserCard from '../components/UserCard';
 
-const ACCENT = "2563EB";
-const myCentro = centros[1]; // IES Politécnico Jesús Marín
+export default function CentroApp() {
+  const { user: authUser, logout } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-const tabs = [
-  { key: "dashboard", label: "Dashboard", icon: "📊" },
-  { key: "alumnos", label: "Alumnos", icon: "🎓" },
-  { key: "empresas", label: "Empresas", icon: "🏢" },
-  { key: "noticias", label: "Noticias", icon: "📰" },
-  { key: "perfil", label: "Mi Centro", icon: "🏫" },
-];
+  const { posts, loadFeed, loading: feedLoading } = useFeed();
+  const {
+    followers,
+    following,
+    followUser,
+    unfollowUser,
+    loading: connectionsLoading,
+  } = useConnections();
+  const { results: searchResults, search, loading: searchLoading } = useUserSearch();
 
-export default function CentroApp({ user, onLogout }) {
-  const [tab, setTab] = useState("dashboard");
-  const [filtroDisponible, setFiltroDisponible] = useState("Todos");
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      loadFeed();
+    } else if (activeTab === 'network') {
+      loadFeed();
+    }
+  }, [activeTab, loadFeed]);
 
-  const alumnosFiltrados = alumnos.filter(a => {
-    if (filtroDisponible === "Disponibles") return a.disponible;
-    if (filtroDisponible === "No disponibles") return !a.disponible;
-    return true;
-  });
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleFollowUser = async (userId) => {
+    try {
+      await followUser(userId);
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleUnfollowUser = async (userId) => {
+    try {
+      await unfollowUser(userId);
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F0F5FF", fontFamily: "'DM Sans', sans-serif" }}>
-      <NavBar
-        rol="Centro FP"
-        accentColor={ACCENT}
-        tabs={tabs}
-        activeTab={tab}
-        onTabChange={setTab}
-        userInitials={user.initials}
-        onLogout={onLogout}
-      />
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #0c1a2e 0%, #0f152e 50%, #14101f 100%)',
+      color: '#fff',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      {/* TOP NAV */}
+      <nav style={{
+        background: 'rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
+            FP<span style={{ color: '#2563EB' }}>Connect</span>
+          </h1>
 
-      <PageWrapper>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { id: 'dashboard', label: '📊 Panel' },
+              { id: 'students', label: '🎓 Alumnos' },
+              { id: 'network', label: '🤝 Red' },
+              { id: 'profile', label: '🏫 Centro' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: activeTab === tab.id
+                    ? 'linear-gradient(135deg, #2563EB, #1d4ed8)'
+                    : 'rgba(255,255,255,0.08)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  transition: 'all 0.3s',
+                  fontSize: 14,
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* ── DASHBOARD ──────────────────────────────────────────── */}
-        {tab === "dashboard" && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ textAlign: 'right', fontSize: 12 }}>
+            <div style={{ fontWeight: 600 }}>
+              {authUser?.firstName} {authUser?.lastName}
+            </div>
+            <div style={{ color: '#ffffff66' }}>🏫 Centro FP</div>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'rgba(255,0,0,0.2)',
+              color: '#ff6b6b',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: 13,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255,0,0,0.3)'}
+            onMouseLeave={(e) => e.target.style.background = 'rgba(255,0,0,0.2)'}
+          >
+            🚪 Salir
+          </button>
+        </div>
+      </nav>
+
+      {/* CONTENT */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px' }}>
+        {/* DASHBOARD TAB */}
+        {activeTab === 'dashboard' && (
           <div>
-            {/* Hero */}
             <div style={{
-              background: "linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)",
-              borderRadius: 20, padding: "28px 32px", marginBottom: 24, color: "#fff",
-              position: "relative", overflow: "hidden",
+              background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)',
+              borderRadius: 16,
+              padding: 32,
+              marginBottom: 32,
+              color: '#fff',
             }}>
-              <div style={{ position: "absolute", right: -40, top: -40, fontSize: 140, opacity: 0.06 }}>🏛️</div>
-              <h1 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800 }}>{myCentro.nombre}</h1>
-              <p style={{ margin: "0 0 22px", opacity: 0.8, fontSize: 14 }}>
-                Panel de gestión · {myCentro.ciudad}, {myCentro.provincia}
+              <h1 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 800 }}>
+                Bienvenido, {authUser?.firstName}
+              </h1>
+              <p style={{ margin: 0, fontSize: 14, opacity: 0.9 }}>
+                Centro FP para formación y desarrollo de talento
               </p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <StatCard value={myCentro.alumnos} label="Alumnos activos" icon="🎓" color="ffffff" />
-                <StatCard value={myCentro.convenios} label="Convenios empresa" icon="🤝" color="ffffff" />
-                <StatCard value={myCentro.ciclos.length} label="Ciclos ofertados" icon="📚" color="ffffff" />
-                <StatCard value={`${myCentro.insercion}%`} label="Inserción laboral" icon="📈" color="ffffff" />
+            </div>
+
+            {feedLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#ffffff66' }}>
+                ⏳ Cargando actividad...
               </div>
-            </div>
-
-            {/* Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
-              {/* Alumnos por ciclo */}
-              <Card>
-                <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 14 }}>📊 Alumnos por ciclo</div>
-                {[
-                  { ciclo: "DAW", n: 145, color: "2563EB" },
-                  { ciclo: "DAM", n: 130, color: "00A878" },
-                  { ciclo: "SMR", n: 105, color: "7C3AED" },
-                  { ciclo: "ASIR", n: 100, color: "F59E0B" },
-                ].map(item => (
-                  <div key={item.ciclo} style={{ marginBottom: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
-                      <span style={{ fontWeight: 700, color: "#333" }}>{item.ciclo}</span>
-                      <span style={{ color: "#999" }}>{item.n} alumnos</span>
-                    </div>
-                    <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{
-                        width: `${(item.n / 145) * 100}%`, height: "100%",
-                        background: `#${item.color}`, borderRadius: 4,
-                        transition: "width 0.5s ease",
-                      }} />
-                    </div>
-                  </div>
-                ))}
-              </Card>
-
-              {/* Actividad reciente */}
-              <Card>
-                <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 14 }}>🔔 Actividad reciente</div>
-                {[
-                  { texto: "Nueva empresa interesada en alumnos DAW", hora: "Hace 2h", tipo: "empresa" },
-                  { texto: "Alejandro Ruiz ha subido su CV actualizado", hora: "Hace 3h", tipo: "alumno" },
-                  { texto: "Solicitud de convenio de AppFactory Córdoba", hora: "Ayer", tipo: "empresa" },
-                  { texto: "5 alumnos nuevos se han registrado en la plataforma", hora: "Hace 2 días", tipo: "info" },
-                  { texto: "Nueva beca Erasmus+ publicada en noticias", hora: "Hace 3 días", tipo: "noticia" },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    display: "flex", gap: 10, marginBottom: 12, paddingBottom: 12,
-                    borderBottom: i < 4 ? "1px solid #f8f8f8" : "none",
-                  }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                      background: item.tipo === "empresa" ? "#7C3AED15" : item.tipo === "alumno" ? "#00A87815" : "#2563EB15",
-                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                    }}>
-                      {item.tipo === "empresa" ? "🏢" : item.tipo === "alumno" ? "👤" : item.tipo === "noticia" ? "📰" : "ℹ️"}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#333", lineHeight: 1.4 }}>{item.texto}</div>
-                      <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{item.hora}</div>
-                    </div>
-                  </div>
-                ))}
-              </Card>
-            </div>
-
-            {/* Empresas colaboradoras */}
-            <Card>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 14 }}>🏢 Empresas colaboradoras del centro</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
-                {empresas.map(e => (
-                  <div key={e.id} style={{
-                    background: "#f8f8fc", borderRadius: 10, padding: "12px 14px",
-                    display: "flex", alignItems: "center", gap: 10,
-                  }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 9, background: `#${e.color}18`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 12, fontWeight: 800, color: `#${e.color}`, flexShrink: 0,
-                    }}>{e.logo}</div>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>{e.nombre}</div>
-                      <div style={{ fontSize: 11, color: "#aaa" }}>{e.vacantes} plazas</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* ── ALUMNOS ────────────────────────────────────────────── */}
-        {tab === "alumnos" && (
-          <div>
-            <SectionTitle sub={`${alumnos.length} alumnos registrados en la plataforma`}>
-              Gestión de Alumnos
-            </SectionTitle>
-            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-              {["Todos", "Disponibles", "No disponibles"].map(f => (
-                <button key={f} onClick={() => setFiltroDisponible(f)} style={{
-                  background: filtroDisponible === f ? `#${ACCENT}` : "#fff",
-                  color: filtroDisponible === f ? "#fff" : "#666",
-                  border: `1.5px solid ${filtroDisponible === f ? `#${ACCENT}` : "#e0e0e0"}`,
-                  borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                }}>{f}</button>
-              ))}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {alumnosFiltrados.map(a => (
-                <Card key={a.id} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <Avatar iniciales={a.iniciales} size={48} bg={ACCENT} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: "#111" }}>{a.nombre}</div>
-                    <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
-                      {a.ciclo} · Nota media: <strong>{a.nota}</strong> · {a.proyectos} proyectos
-                    </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {a.skills.slice(0, 4).map(s => <Badge key={s} text={s} color={ACCENT} />)}
-                      {a.skills.length > 4 && <Badge text={`+${a.skills.length - 4}`} color="999999" />}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
-                    <Badge text={a.disponible ? "✅ Disponible" : "🔒 No disponible"} color={a.disponible ? "00A878" : "999999"} />
-                    <Button size="sm" color={ACCENT}>Ver perfil</Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── EMPRESAS ───────────────────────────────────────────── */}
-        {tab === "empresas" && (
-          <div>
-            <SectionTitle sub="Empresas con convenio activo con el centro">
-              Empresas colaboradoras
-            </SectionTitle>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {empresas.map(e => (
-                <Card key={e.id}>
-                  <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-                    <div style={{
-                      width: 52, height: 52, borderRadius: 13, background: `#${e.color}18`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 16, fontWeight: 800, color: `#${e.color}`,
-                    }}>{e.logo}</div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: 15, color: "#111" }}>{e.nombre}</div>
-                      <div style={{ color: "#888", fontSize: 12 }}>{e.sector} · {e.empleados} empleados · {e.ciudad}</div>
-                      <div style={{ marginTop: 6 }}>
-                        {e.perfiles.map(p => <Badge key={p} text={p} color={e.color} />)}
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+                {posts?.slice(0, 3).map(post => (
+                  <div
+                    key={post.id}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      padding: 20,
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #2563EB, #1d4ed8)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {post.author?.firstName?.[0]?.toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {post.author?.firstName} {post.author?.lastName}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#ffffff66' }}>
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: '#ffffff99' }}>
+                      {post.content?.slice(0, 100)}...
+                    </p>
                   </div>
-                  <p style={{ color: "#666", fontSize: 13, lineHeight: 1.6, margin: "0 0 14px" }}>{e.descripcion}</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "#aaa" }}>💼 {e.vacantes} plazas disponibles</span>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <Button variant="outline" size="sm" color={e.color}>Contactar</Button>
-                      <Button size="sm" color={e.color}>Ver empresa →</Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── NOTICIAS ───────────────────────────────────────────── */}
-        {tab === "noticias" && (
+        {/* STUDENTS TAB - Search for students */}
+        {activeTab === 'students' && (
           <div>
-            <SectionTitle sub="Información relevante para el centro y sus alumnos">
-              Noticias y Convocatorias
-            </SectionTitle>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {noticias.map(n => (
-                <Card key={n.id} style={{ display: "flex", gap: 16 }}>
-                  <div style={{
-                    width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-                    background: n.categoria === "Beca" ? "#00A87815" : n.categoria === "Convocatoria" ? "#2563EB15" : "#F59E0B15",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-                  }}>
-                    {n.categoria === "Beca" ? "💰" : n.categoria === "Convocatoria" ? "📋" : "🏆"}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
-                      <Badge text={n.categoria} color={n.categoria === "Beca" ? "00A878" : n.categoria === "Convocatoria" ? "2563EB" : "F59E0B"} />
-                      {n.urgente && <Badge text="⚡ URGENTE" color="EF4444" />}
-                      <span style={{ fontSize: 11, color: "#ccc", marginLeft: "auto" }}>{n.fecha}</span>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: "#111", marginBottom: 6 }}>{n.titulo}</div>
-                    <div style={{ color: "#666", fontSize: 13, lineHeight: 1.6 }}>{n.resumen}</div>
-                  </div>
-                </Card>
-              ))}
+            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>
+              🎓 Busca Alumnos
+            </h2>
+
+            <div style={{ marginBottom: 32 }}>
+              <input
+                type="text"
+                placeholder="Busca alumnos disponibles..."
+                onChange={(e) => search(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: 500,
+                  padding: '14px 18px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(37, 99, 235, 0.5)';
+                  e.target.style.background = 'rgba(37, 99, 235, 0.08)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                }}
+              />
             </div>
+
+            {searchLoading ? (
+              <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                ⏳ Buscando...
+              </p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                {searchResults.length === 0 ? (
+                  <p style={{ color: '#ffffff66', gridColumn: '1 / -1', textAlign: 'center', padding: 40 }}>
+                    🔍 Escribe para buscar alumnos
+                  </p>
+                ) : (
+                  searchResults.map(student => (
+                    <UserCard
+                      key={student.id}
+                      user={student}
+                      onFollow={() => handleFollowUser(student.id)}
+                    />
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── PERFIL CENTRO ──────────────────────────────────────── */}
-        {tab === "perfil" && (
-          <div>
-            <SectionTitle>Perfil del Centro</SectionTitle>
-            <Card style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 24 }}>
-                <div style={{ fontSize: 64 }}>{myCentro.emoji}</div>
-                <div style={{ flex: 1 }}>
-                  <h1 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800, color: "#111" }}>{myCentro.nombre}</h1>
-                  <div style={{ color: "#888", fontSize: 14, marginBottom: 14 }}>
-                    📍 {myCentro.ciudad}, {myCentro.provincia} · Centro público · Desde 1980
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {myCentro.ciclos.map(c => <Badge key={c} text={c} color={ACCENT} />)}
-                  </div>
-                </div>
-                <Button color={ACCENT}>✏️ Editar perfil</Button>
-              </div>
+        {/* NETWORK TAB */}
+        {activeTab === 'network' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>
+                👥 Seguidores ({followers?.length || 0})
+              </h2>
 
-              <div style={{ display: "flex", gap: 14, marginBottom: 24 }}>
-                <StatCard value={myCentro.alumnos} label="Alumnos" icon="🎓" color={ACCENT} />
-                <StatCard value={`${myCentro.insercion}%`} label="Inserción" icon="📈" color={ACCENT} />
-                <StatCard value={myCentro.convenios} label="Convenios" icon="🤝" color={ACCENT} />
-                <StatCard value={`${myCentro.rating}⭐`} label="Valoración" icon="" color={ACCENT} />
-              </div>
-
-              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 20 }}>
-                <p style={{ color: "#555", fontSize: 15, lineHeight: 1.8, margin: 0 }}>
-                  {myCentro.descripcion}
+              {connectionsLoading ? (
+                <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                  ⏳ Cargando...
                 </p>
-              </div>
-            </Card>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {followers?.length === 0 && (
+                    <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                      📭 Sin seguidores aún
+                    </p>
+                  )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-              {[
-                { label: "Teléfono", value: myCentro.telefono, icon: "📞" },
-                { label: "Email", value: myCentro.email, icon: "✉️" },
-                { label: "Web", value: myCentro.web, icon: "🌐" },
-              ].map(item => (
-                <Card key={item.label}>
-                  <div style={{ fontSize: 11, color: "#aaa", marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                    {item.icon} {item.label}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#333" }}>{item.value}</div>
-                </Card>
-              ))}
+                  {followers?.map(follower => (
+                    <UserCard
+                      key={follower.id}
+                      user={follower}
+                      actions={false}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>
+                ⭐ Siguiendo ({following?.length || 0})
+              </h2>
+
+              {connectionsLoading ? (
+                <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                  ⏳ Cargando...
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {following?.length === 0 && (
+                    <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                      🔍 No sigues a nadie aún
+                    </p>
+                  )}
+
+                  {following?.map(followedUser => (
+                    <UserCard
+                      key={followedUser.id}
+                      user={followedUser}
+                      isFollowing={true}
+                      onUnfollow={() => handleUnfollowUser(followedUser.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-      </PageWrapper>
+        {/* PROFILE TAB */}
+        {activeTab === 'profile' && (
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 16,
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: 32,
+            }}
+          >
+            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>
+              🏫 Información del Centro
+            </h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 8, color: '#ffffff99' }}>
+                  Centro
+                </label>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                }}>
+                  {authUser?.firstName}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 8, color: '#ffffff99' }}>
+                  Correo
+                </label>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                }}>
+                  {authUser?.email}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 8, color: '#ffffff99' }}>
+                  Rol
+                </label>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                }}>
+                  Centro FP
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 8, color: '#ffffff99' }}>
+                  Desde
+                </label>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 14,
+                }}>
+                  {new Date(authUser?.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 32 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>📊 Estadísticas</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                <div style={{
+                  background: 'rgba(0, 168, 120, 0.1)',
+                  borderRadius: 12,
+                  padding: 16,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+                    {followers?.length || 0}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#ffffff99' }}>Seguidores</div>
+                </div>
+
+                <div style={{
+                  background: 'rgba(37, 99, 235, 0.1)',
+                  borderRadius: 12,
+                  padding: 16,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+                    {following?.length || 0}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#ffffff99' }}>Siguiendo</div>
+                </div>
+
+                <div style={{
+                  background: 'rgba(168, 85, 247, 0.1)',
+                  borderRadius: 12,
+                  padding: 16,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+                    {posts?.length || 0}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#ffffff99' }}>Actividad</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
