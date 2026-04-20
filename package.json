@@ -1,10 +1,27 @@
 {
   "name": "fp-connect",
   "version": "1.0.0",
+  "main": "main.js",
   "scripts": {
     "dev": "vite",
+    "dev:desktop": "concurrently \"vite\" \"wait-on tcp:5173 && electron . --no-sandbox\"",
     "build": "vite build",
+    "build:desktop": "vite build && electron-builder --win",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.fpconnect.app",
+    "productName": "FPConnect",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "main.js"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.4",
@@ -12,8 +29,14 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^6.20.0",
-    "zustand": "^4.4.2",
     "socket.io-client": "^4.7.2",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "zustand": "^4.4.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^41.2.1",
+    "electron-builder": "^26.8.1",
+    "wait-on": "^9.0.5"
   }
 }
