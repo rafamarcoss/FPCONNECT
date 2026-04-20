@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fpconnect-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: fpconnect
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - fpconnect-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: fpconnect-backend
+    environment:
+      DATABASE_URL: postgresql://admin:adminpassword@db:5432/fpconnect?schema=public
+      PORT: 3000 # Adjust if your backend uses a different port like 3030
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - fpconnect-network
+    command: >
+      sh -c "npx prisma migrate deploy && npm start"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fpconnect-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - fpconnect-network
+    restart: unless-stopped
+
+networks:
+  fpconnect-network:
+    driver: bridge
+
+volumes:
+  pgdata:

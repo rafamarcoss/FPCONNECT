@@ -15,7 +15,11 @@ export const useFeed = () => {
     setError(null);
     try {
       const response = await postsService.getFeed(page, limit);
-      setPosts(response.data.posts);
+      const normalizedPosts = (response.data.posts || []).map((post) => ({
+        ...post,
+        isLiked: Array.isArray(post.likes) && post.likes.length > 0,
+      }));
+      setPosts(normalizedPosts);
       setPagination(response.data.pagination);
     } catch (err) {
       setError(err.message || 'Error al cargar el feed');
@@ -34,7 +38,11 @@ export const useFeed = () => {
 
   const updatePost = useCallback((postId, updates) => {
     setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, ...updates } : p))
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const resolvedUpdates = typeof updates === 'function' ? updates(p) : updates;
+        return { ...p, ...resolvedUpdates };
+      })
     );
   }, []);
 
@@ -255,6 +263,18 @@ export const useConnections = () => {
   const followUser = useCallback(async (userId) => {
     try {
       await connectionsService.followUser(userId);
+      // Actualizar el estado local para reflejar que ahora seguimos a la persona
+      setConnections(prev => {
+        // En lugar de una llamada a red extra, insertamos un objeto con el ID temporal.
+        // Si el usuario vuelve a recargar, obtendrá el perfil completo.
+        const alreadyFollowing = prev.following.some(u => u.id === userId);
+        if (alreadyFollowing) return prev;
+        
+        return {
+          ...prev,
+          following: [{ id: userId }, ...prev.following]
+        };
+      });
     } catch (err) {
       setError(err.message || 'Error al seguir usuário');
       throw err;
@@ -264,6 +284,11 @@ export const useConnections = () => {
   const unfollowUser = useCallback(async (userId) => {
     try {
       await connectionsService.unfollowUser(userId);
+      // Eliminar del estado local de seguidos
+      setConnections(prev => ({
+        ...prev,
+        following: prev.following.filter(u => u.id !== userId)
+      }));
     } catch (err) {
       setError(err.message || 'Error al dejar de seguir');
       throw err;

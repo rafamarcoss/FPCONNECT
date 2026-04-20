@@ -50,7 +50,7 @@ export default function CentroApp() {
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #0c1a2e 0%, #0f152e 50%, #14101f 100%)',
       color: '#fff',
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Inter', sans-serif",
     }}>
       {/* TOP NAV */}
       <nav style={{

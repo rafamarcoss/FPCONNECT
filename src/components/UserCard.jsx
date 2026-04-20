@@ -5,13 +5,18 @@ import { usersService } from '../services';
  * Componente UserCard
  * Card reutilizable para mostrar información de usuarios
  */
-export default function UserCard({ user, onFollow, onUnfollow, isFollowing, actions = true }) {
+export default function UserCard({ user, onFollow, onUnfollow, isFollowing, actions = true, children, onOpenProfile }) {
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState('');
 
   const handleViewProfile = async () => {
+    if (onOpenProfile) {
+      onOpenProfile(user.id);
+      return;
+    }
+
     setLoadingProfile(true);
     setProfileError('');
     try {
@@ -81,90 +86,110 @@ export default function UserCard({ user, onFollow, onUnfollow, isFollowing, acti
         border: '1px solid rgba(255, 255, 255, 0.1)',
         padding: 16,
         display: 'flex',
+        flexDirection: 'column',
         gap: 12,
-        alignItems: 'center',
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Avatar */}
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: '50%',
-          background: `linear-gradient(135deg, #00A878, #007A57)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontSize: 16,
-          fontWeight: 700,
-          flexShrink: 0,
-        }}
-      >
-        {initials}
-      </div>
-
-      {/* Info */}
-      <div style={{ flex: 1 }}>
-        <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
-          {user.firstName} {user.lastName}
-        </div>
-        <div style={{ color: '#ffffff66', fontSize: 12 }}>
-          {user.role === 'ALUMNO' && '👨‍🎓 Estudiante'}
-          {user.role === 'CENTRO' && '🏫 Centro FP'}
-          {user.role === 'EMPRESA' && '💼 Empresa'}
-        </div>
-        {user.bio && (
-          <p style={{ color: '#ffffff88', fontSize: 12, margin: '4px 0 0 0' }}>
-            {user.bio}
-          </p>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-        <button
-          onClick={handleViewProfile}
-          disabled={loadingProfile}
+      <div style={{ display: 'flex', gap: 12 }}>
+        {/* Avatar */}
+        <div
           style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.05)',
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            background: `linear-gradient(135deg, #00A878, #007A57)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             color: '#fff',
-            cursor: loadingProfile ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-            fontSize: 12,
-            whiteSpace: 'nowrap',
-            opacity: loadingProfile ? 0.7 : 1,
+            fontSize: 16,
+            fontWeight: 700,
+            flexShrink: 0,
           }}
         >
-          {loadingProfile ? 'Cargando...' : 'Ver perfil'}
-        </button>
+          {initials}
+        </div>
 
-        {actions && (
-          <button
-            onClick={() => (isFollowing ? onUnfollow(user.id) : onFollow(user.id))}
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ color: '#fff', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {user.firstName} {user.lastName}
+          </div>
+          <div style={{ color: '#ffffff66', fontSize: 12, marginBottom: 8 }}>
+            {user.role === 'ALUMNO' && '👨‍🎓 Estudiante'}
+            {user.role === 'CENTRO' && '🏫 Centro FP'}
+            {user.role === 'EMPRESA' && '💼 Empresa'}
+          </div>
+          <p
             style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: isFollowing
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'linear-gradient(135deg, #00A878, #007A57)',
-              color: '#fff',
-              cursor: 'pointer',
-              fontWeight: 600,
+              color: '#ffffffaa',
               fontSize: 12,
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
+              margin: '0 0 12px 0',
+              display: '-webkit-box',
+              WebkitLineClamp: 4,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              lineHeight: 1.4,
+              minHeight: '67px',
             }}
           >
-            {isFollowing ? '✓ Siguiendo' : '+ Seguir'}
-          </button>
+            {user.bio || 'Sin descripcion disponible.'}
+          </p>
+
+          <div style={{ marginTop: 'auto' }}>
+            <button
+              onClick={handleViewProfile}
+              disabled={loadingProfile}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                cursor: loadingProfile ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+                fontSize: 12,
+                whiteSpace: 'nowrap',
+                opacity: loadingProfile ? 0.7 : 1,
+              }}
+            >
+              {loadingProfile ? 'Cargando...' : 'Ver perfil completo'}
+            </button>
+          </div>
+        </div>
+
+        {/* Optional explicit native follow button if actions=true */}
+        {actions && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => (isFollowing ? onUnfollow(user.id) : onFollow(user.id))}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: isFollowing
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'linear-gradient(135deg, #00A878, #007A57)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: 12,
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {isFollowing ? '✓ Siguiendo' : '+ Seguir'}
+            </button>
+          </div>
         )}
       </div>
+
+      {children}
 
       {(profile || profileError) && (
         <div

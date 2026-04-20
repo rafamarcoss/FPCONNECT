@@ -14,9 +14,26 @@ export const validate = (schema, source = 'body') => {
         message: detail.message,
       }));
 
+      // Mensajes de error personalizados para el Frontend (Traducción y claridad)
+      let customMessage = 'Validación fallida';
+      
+      const pwdError = messages.find(m => m.field === 'password');
+      if (pwdError) {
+        if (pwdError.message.includes('length must be at least')) {
+          customMessage = 'La contraseña debe tener al menos 8 caracteres.';
+        } else {
+          customMessage = 'La contraseña no es válida.';
+        }
+      }
+      
+      const emailError = messages.find(m => m.field === 'email');
+      if (emailError) {
+        customMessage = 'El correo electrónico proporcionado no es válido.';
+      }
+
       return res.status(400).json({
         success: false,
-        message: 'Validación fallida',
+        message: customMessage,
         errors: messages,
       });
     }

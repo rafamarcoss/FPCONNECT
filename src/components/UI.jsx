@@ -9,7 +9,7 @@ export const Badge = ({ text, color = "00A878" }) => (
     padding: "2px 9px",
     fontSize: 11,
     fontWeight: 700,
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', sans-serif",
     whiteSpace: "nowrap",
     display: "inline-block",
   }}>{text}</span>
@@ -27,7 +27,7 @@ export const Avatar = ({ iniciales, size = 40, bg = "00A878" }) => (
     color: "#fff",
     fontWeight: 800,
     fontSize: size * 0.33,
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', sans-serif",
     flexShrink: 0,
     boxShadow: `0 4px 14px #${bg}40`,
     letterSpacing: 0.5,
@@ -71,7 +71,7 @@ export const Button = ({ children, onClick, variant = "primary", color = "00A878
         fontSize: fontSizes[size],
         fontWeight: 700,
         cursor: "pointer",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', sans-serif",
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
@@ -104,7 +104,7 @@ export const Input = ({ placeholder, value, onChange, style = {} }) => (
       borderRadius: 10,
       padding: "9px 14px",
       fontSize: 13,
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Inter', sans-serif",
       outline: "none",
       background: "#fff",
       color: "#333",
@@ -156,7 +156,7 @@ export const NavBar = ({ rol, accentColor, tabs, activeTab, onTabChange, userIni
         color: activeTab === t.key ? `#${accentColor}` : "#666",
         fontWeight: activeTab === t.key ? 700 : 500,
         fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', sans-serif",
         transition: "color 0.15s",
       }}>
         <span>{t.icon}</span>{t.label}
@@ -170,7 +170,7 @@ export const NavBar = ({ rol, accentColor, tabs, activeTab, onTabChange, userIni
       <button onClick={onLogout} style={{
         background: "none", border: "1px solid #e8e8e8", borderRadius: 8,
         padding: "5px 10px", fontSize: 12, color: "#888", cursor: "pointer",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', sans-serif",
       }}>Salir</button>
     </div>
   </div>

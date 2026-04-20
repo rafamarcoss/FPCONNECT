@@ -74,7 +74,21 @@ export const useAuthStore = create((set, get) => ({
 
       return response;
     } catch (error) {
-      const message = error.message || 'Error al registrarse';
+      let message = error.message || 'Error al registrarse';
+
+      // Interpretar errores de validación del backend si existen
+      if (error.data?.errors && Array.isArray(error.data.errors)) {
+        const validationMessages = error.data.errors.map(err => {
+          if (err.field === 'recoveryQuestion') return 'La pregunta de seguridad debe tener al menos 8 caracteres';
+          if (err.field === 'recoveryAnswer') return 'La respuesta debe tener al menos 2 caracteres';
+          if (err.field === 'password') return 'La contraseña debe tener al menos 8 caracteres';
+          if (err.field === 'firstName') return 'El nombre es obligatorio';
+          if (err.field === 'lastName') return 'El apellido es obligatorio';
+          return err.message; 
+        });
+        message = validationMessages.join(' • ');
+      }
+
       set({
         error: message,
         isLoading: false,

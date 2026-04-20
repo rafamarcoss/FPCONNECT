@@ -50,7 +50,7 @@ export default function EmpresaApp() {
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #1a0f2e 0%, #2e0f1f 50%, #1f1014 100%)',
       color: '#fff',
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Inter', sans-serif",
     }}>
       {/* TOP NAV */}
       <nav style={{

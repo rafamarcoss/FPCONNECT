@@ -63,15 +63,16 @@ export const postService = {
 
     const followingIds = following.map((conn) => conn.followingId);
 
-    // Posts del usuario + posts de usuarios que sigue
+    // Posts del usuario + posts de usuarios que sigue + todos los públicos
     const where = {
       OR: [
+        { visibility: 'PUBLIC' },
         { authorId: userId },
-        { authorId: { in: followingIds } },
+        {
+          authorId: { in: followingIds },
+          visibility: 'FRIENDS_ONLY'
+        },
       ],
-      visibility: {
-        in: ['PUBLIC', 'FRIENDS_ONLY'],
-      },
     };
 
     const posts = await prisma.post.findMany({

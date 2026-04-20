@@ -1,5 +1,5 @@
 // Seed de datos de ejemplo para demo
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import prisma from '../src/config/prisma.js';
 import logger from '../src/config/logger.js';
 

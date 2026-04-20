@@ -1,14 +1,84 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
 import { useFeed, useConnections, useUserSearch } from '../hooks';
 import Feed from '../components/Feed';
 import UserCard from '../components/UserCard';
+import PublicProfileView from '../components/PublicProfileView';
 import { usersService } from '../services';
+
+const ANDALUCIA_PROVINCES = [
+  'ALMERIA',
+  'CADIZ',
+  'CORDOBA',
+  'GRANADA',
+  'HUELVA',
+  'JAEN',
+  'MALAGA',
+  'SEVILLA',
+];
+
+const FP_NEWS_ITEMS = [
+  {
+    id: 'mec-2026',
+    title: 'Becas MEC 2026/2027 para estudios postobligatorios',
+    category: 'Becas',
+    summary: 'Ayudas para estudiantes de FP Grado Medio y Superior. Incluye cuantia fija y variable segun renta y rendimiento.',
+    deadline: 'Plazo estimado: mayo-junio',
+    source: 'Ministerio de Educacion y FP',
+    url: 'https://www.becaseducacion.gob.es/',
+  },
+  {
+    id: 'fse-plus-andalucia',
+    title: 'Programas de empleabilidad juvenil vinculados a FP en Andalucia',
+    category: 'Convocatorias',
+    summary: 'Iniciativas cofinanciadas para mejorar la insercion laboral de alumnado de FP con practicas y formacion complementaria.',
+    deadline: 'Convocatorias durante el curso',
+    source: 'Junta de Andalucia',
+    url: 'https://www.juntadeandalucia.es/temas/estudiar/becas.html',
+  },
+  {
+    id: 'erasmus-fp',
+    title: 'Movilidad Erasmus+ para alumnado de FP',
+    category: 'Internacional',
+    summary: 'Opciones para realizar practicas en empresas europeas con apoyo economico para viaje y estancia.',
+    deadline: 'Depende del centro educativo',
+    source: 'SEPIE - Erasmus+',
+    url: 'https://www.sepie.es/',
+  },
+  {
+    id: 'andalucia-dual',
+    title: 'Nuevas plazas de FP Dual en sectores tecnologicos',
+    category: 'FP Dual',
+    summary: 'Incremento de plazas en colaboracion con empresas andaluzas para DAM, DAW, ASIR y especializaciones digitales.',
+    deadline: 'Apertura por centro',
+    source: 'Portal de FP Andalucia',
+    url: 'https://www.juntadeandalucia.es/educacion/portals/web/formacion-profesional-andaluza',
+  },
+  {
+    id: 'aula-emprendimiento',
+    title: 'Aulas de emprendimiento y ayudas para proyectos de FP',
+    category: 'Emprendimiento',
+    summary: 'Convocatorias para prototipos y proyectos innovadores desarrollados por alumnado de ciclos formativos.',
+    deadline: 'Revision trimestral',
+    source: 'TodoFP',
+    url: 'https://todofp.es/',
+  },
+];
+
+const normalizeText = (value = '') => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase();
 
 export default function AlumnoApp() {
   const { user: authUser, logout } = useAuthStore();
+  const { showToast } = useUIStore();
   const [activeTab, setActiveTab] = useState('feed');
+  const [viewedProfileId, setViewedProfileId] = useState(null);
+  const [networkSubTab, setNetworkSubTab] = useState('following');
   const [exploreSubTab, setExploreSubTab] = useState('centers'); // centers, enterprises, students
+  const [exploreProvinceQuickFilter, setExploreProvinceQuickFilter] = useState('ALL');
   
   // Búsqueda para Centros
   const [centerQuery, setCenterQuery] = useState('');
@@ -70,14 +140,32 @@ export default function AlumnoApp() {
   const centerMatchesFilter = (center) => {
     const cicles = parseCicles(center.centerProfile?.cicles);
     const matchesGrade = gradeFilter === 'ALL' || cicles.some((cicle) => getGradeType(cicle) === gradeFilter);
-    const centerProvince = (center.centerProfile?.province || '').toUpperCase();
+    const centerProvince = normalizeText(center.centerProfile?.province || '');
     const matchesProvince = provinceFilter === 'ALL' || centerProvince === provinceFilter;
-    return matchesGrade && matchesProvince;
+    const matchesQuickProvince = exploreProvinceQuickFilter === 'ALL' || centerProvince === exploreProvinceQuickFilter;
+    return matchesGrade && matchesProvince && matchesQuickProvince;
+  };
+
+  const matchesQuickProvinceFromText = (value) => {
+    if (exploreProvinceQuickFilter === 'ALL') return true;
+    const normalizedValue = normalizeText(value || '');
+    return normalizedValue.includes(exploreProvinceQuickFilter);
   };
 
   const filteredCenters = (searchResults || [])
     .filter((user) => user.role === 'CENTRO')
     .filter(centerMatchesFilter);
+
+  const filteredEnterprises = (searchResults || [])
+    .filter((user) => user.role === 'EMPRESA')
+    .filter((user) => {
+      const provinceOrCity = user.enterpriseProfile?.province || user.enterpriseProfile?.city || user.location || '';
+      return matchesQuickProvinceFromText(provinceOrCity);
+    });
+
+  const filteredStudents = (searchResults || [])
+    .filter((user) => user.role === 'ALUMNO')
+    .filter((user) => matchesQuickProvinceFromText(user.location || ''));
 
   const availableProvinces = Array.from(
     new Set(
@@ -85,9 +173,26 @@ export default function AlumnoApp() {
         .filter((user) => user.role === 'CENTRO')
         .map((user) => user.centerProfile?.province)
         .filter(Boolean)
-        .map((province) => province.toUpperCase())
+        .map((province) => normalizeText(province))
     )
   ).sort();
+
+  const getUserRoleLabel = (role) => {
+    if (role === 'ALUMNO') return 'alumno';
+    if (role === 'CENTRO') return 'centro educativo';
+    if (role === 'EMPRESA') return 'empresa';
+    return 'perfil';
+  };
+
+  const resolveUserRoleById = (userId) => {
+    const knownUsers = [
+      ...(followers || []),
+      ...(following || []),
+      ...(recommendations || []),
+      ...(searchResults || []),
+    ];
+    return knownUsers.find((candidate) => candidate?.id === userId)?.role;
+  };
 
   const loadLinkedCenter = async () => {
     try {
@@ -101,18 +206,27 @@ export default function AlumnoApp() {
   useEffect(() => {
     if (activeTab === 'feed') {
       loadFeed();
+      loadRecommendations();
+      loadFollowing(1, 200);
     } else if (activeTab === 'network') {
       loadFollowers();
-      loadFollowing();
+      loadFollowing(1, 200);
+      loadRecommendations();
+      loadFeed();
     } else if (activeTab === 'explore') {
       loadRecommendations();
-      // Cargar centros, empresas y alumnos
-      search('*', 1, 50, 'CENTRO');
-      search('*', 1, 50, 'EMPRESA');
-      search('*', 1, 50, 'ALUMNO');
+      loadFollowing(1, 200);
+      // Cargar contenido de la pestaña actual
+      if (exploreSubTab === 'centers') {
+        search(centerQuery.trim() || 'all', 1, 50, 'CENTRO');
+      } else if (exploreSubTab === 'enterprises') {
+        search(enterpriseQuery.trim() || 'all', 1, 50, 'EMPRESA');
+      } else if (exploreSubTab === 'students') {
+        search(studentQuery.trim() || 'all', 1, 50, 'ALUMNO');
+      }
       loadLinkedCenter();
     }
-  }, [activeTab, loadFeed, loadFollowers, loadFollowing, loadRecommendations, search]);
+  }, [activeTab, exploreSubTab, loadFeed, loadFollowers, loadFollowing, loadRecommendations, search]);
 
   useEffect(() => {
     loadLinkedCenter();
@@ -125,19 +239,23 @@ export default function AlumnoApp() {
   const handleFollowUser = async (userId) => {
     try {
       await followUser(userId);
+      const role = resolveUserRoleById(userId);
+      showToast(`Ahora sigues a este ${getUserRoleLabel(role)}`, 'success');
     } catch (err) {
-      alert('Error: ' + err.message);
+      showToast(err.message || 'No se pudo seguir al usuario', 'error');
     }
   };
 
   const handleUnfollowUser = async (userId) => {
     try {
       await unfollowUser(userId);
+      const role = resolveUserRoleById(userId);
+      showToast(`Has dejado de seguir este ${getUserRoleLabel(role)}`, 'success');
       if (linkedCenter?.id === userId) {
         setLinkedCenter(null);
       }
     } catch (err) {
-      alert('Error: ' + err.message);
+      showToast(err.message || 'No se pudo dejar de seguir', 'error');
     }
   };
 
@@ -147,7 +265,7 @@ export default function AlumnoApp() {
     try {
       const response = await usersService.linkMeToCenter(center.id);
       setLinkedCenter(response.data);
-      await loadFollowing();
+      await loadFollowing(1, 200);
       await loadRecommendations();
     } catch (err) {
       setLinkError(err.message || 'No se pudo vincular el centro');
@@ -162,7 +280,7 @@ export default function AlumnoApp() {
     try {
       await usersService.unlinkMeFromCenter();
       setLinkedCenter(null);
-      await loadFollowing();
+      await loadFollowing(1, 200);
       await loadRecommendations();
     } catch (err) {
       setLinkError(err.message || 'No se pudo desvincular el centro');
@@ -171,12 +289,29 @@ export default function AlumnoApp() {
     }
   };
 
+  const handleOpenProfile = async (userId) => {
+    setViewedProfileId(userId);
+    try {
+      await loadFollowing(1, 200);
+    } catch {
+      // Keep opening profile even if follows refresh fails.
+    }
+  };
+
+  const isViewedProfileFollowing = viewedProfileId
+    ? !!following?.find((connectedUser) => connectedUser.id === viewedProfileId)
+    : false;
+
+  const followingIds = new Set((following || []).map((connectedUser) => connectedUser.id));
+  const followingPosts = (posts || []).filter((post) => followingIds.has(post.author?.id));
+  const recommendedByInterests = (recommendations || []).filter((user) => !followingIds.has(user.id));
+
   return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #0c1a14 0%, #0f1f2e 50%, #14101f 100%)',
       color: '#fff',
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Inter', sans-serif",
     }}>
       {/* TOP NAV */}
       <nav style={{
@@ -199,12 +334,16 @@ export default function AlumnoApp() {
           <div style={{ display: 'flex', gap: 8 }}>
             {[
               { id: 'feed', label: '📝 Feed' },
-              { id: 'network', label: '🔗 Red' },
+              { id: 'network', label: '🔗 Conexiones' },
               { id: 'explore', label: '🔍 Explorar' },
+              { id: 'news', label: '📰 Noticias FP' },
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setViewedProfileId(null);
+                  setActiveTab(tab.id);
+                }}
                 style={{
                   padding: '8px 16px',
                   borderRadius: 8,
@@ -257,14 +396,28 @@ export default function AlumnoApp() {
       {/* CONTENT */}
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px' }}>
         {/* FEED TAB */}
-        {activeTab === 'feed' && (
+        {viewedProfileId ? (
+          <PublicProfileView
+            userId={viewedProfileId}
+            onBack={() => setViewedProfileId(null)}
+            isFollowing={isViewedProfileFollowing}
+            onFollow={handleFollowUser}
+            onUnfollow={handleUnfollowUser}
+          />
+        ) : activeTab === 'feed' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 24 }}>
             {feedLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#ffffff66' }}>
                 ⏳ Cargando feed...
               </div>
             ) : (
-              <Feed />
+              <Feed 
+                recommendations={recommendations}
+                following={following}
+                onFollow={handleFollowUser}
+                onUnfollow={handleUnfollowUser}
+                onOpenProfile={handleOpenProfile}
+              />
             )}
 
             {/* SIDEBAR - RECOMENDACIONES */}
@@ -326,13 +479,22 @@ export default function AlumnoApp() {
                           </div>
                         </div>
                         <button
-                          onClick={() => handleFollowUser(recommendedUser.id)}
+                          onClick={() => {
+                            const isFollowing = following?.find(u => u.id === recommendedUser.id);
+                            if (isFollowing) {
+                              handleUnfollowUser(recommendedUser.id);
+                            } else {
+                              handleFollowUser(recommendedUser.id);
+                            }
+                          }}
                           style={{
                             width: '100%',
                             padding: '6px 8px',
                             borderRadius: 6,
                             border: 'none',
-                            background: 'linear-gradient(135deg, #00A878, #007A57)',
+                            background: following?.find(u => u.id === recommendedUser.id)
+                              ? 'rgba(255, 255, 255, 0.15)'
+                              : 'linear-gradient(135deg, #00A878, #007A57)',
                             color: '#fff',
                             cursor: 'pointer',
                             fontSize: 11,
@@ -342,7 +504,7 @@ export default function AlumnoApp() {
                           onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
                           onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                         >
-                          + Seguir
+                          {following?.find(u => u.id === recommendedUser.id) ? '✓ Siguiendo' : '+ Seguir'}
                         </button>
                       </div>
                     ))
@@ -354,69 +516,129 @@ export default function AlumnoApp() {
         )}
 
         {/* NETWORK TAB */}
-        {activeTab === 'network' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-            <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>
-                👥 Mis Seguidores ({followers?.length || 0})
-              </h2>
-
-              {connectionsLoading ? (
-                <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
-                  ⏳ Cargando...
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {followers?.length === 0 && (
-                    <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
-                      📭 Aún no tienes seguidores
-                    </p>
-                  )}
-
-                  {followers?.map(follower => (
-                    <UserCard
-                      key={follower.id}
-                      user={follower}
-                      actions={false}
-                    />
-                  ))}
-                </div>
-              )}
+        {!viewedProfileId && activeTab === 'network' && (
+          <div>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+              {[
+                { id: 'following', label: `⭐ Siguiendo (${following?.length || 0})` },
+                { id: 'followers', label: `👥 Seguidores (${followers?.length || 0})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setNetworkSubTab(tab.id)}
+                  style={{
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    background: networkSubTab === tab.id
+                      ? 'linear-gradient(135deg, #00A878, #007A57)'
+                      : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>
-                ⭐ Siguiendo ({following?.length || 0})
-              </h2>
+            {networkSubTab === 'following' && (
+              <div style={{ display: 'grid', gap: 18 }}>
+                {connectionsLoading ? (
+                  <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
+                    ⏳ Cargando...
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                      {following?.slice(0, 6).map((followedUser) => (
+                        <UserCard
+                          key={followedUser.id}
+                          user={followedUser}
+                          isFollowing={true}
+                          onUnfollow={() => handleUnfollowUser(followedUser.id)}
+                          onOpenProfile={handleOpenProfile}
+                        />
+                      ))}
+                    </div>
 
-              {connectionsLoading ? (
-                <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
-                  ⏳ Cargando...
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {following?.length === 0 && (
-                    <p style={{ color: '#ffffff66', textAlign: 'center', padding: 40 }}>
-                      🔍 No sigues a nadie aún
-                    </p>
-                  )}
+                    <div
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 14,
+                        padding: 16,
+                      }}
+                    >
+                      <h3 style={{ margin: '0 0 12px 0', fontSize: 18 }}>📰 Publicaciones y noticias de quienes sigues</h3>
+                      {followingPosts.length === 0 ? (
+                        <p style={{ color: '#ffffff80', margin: 0 }}>
+                          Aún no hay publicaciones recientes de tus seguidos.
+                        </p>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 10 }}>
+                          {followingPosts.slice(0, 12).map((post) => (
+                            <div
+                              key={post.id}
+                              style={{
+                                padding: 12,
+                                borderRadius: 10,
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(255,255,255,0.03)',
+                              }}
+                            >
+                              <div style={{ fontSize: 12, color: '#ffffff99', marginBottom: 6 }}>
+                                {post.author?.firstName} {post.author?.lastName} · {post.author?.role}
+                              </div>
+                              <div style={{ fontSize: 14, color: '#fff' }}>{post.content}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
-                  {following?.map(followedUser => (
-                    <UserCard
-                      key={followedUser.id}
-                      user={followedUser}
-                      isFollowing={true}
-                      onUnfollow={() => handleUnfollowUser(followedUser.id)}
-                    />
-                  ))}
+            {networkSubTab === 'followers' && (
+              <div style={{ display: 'grid', gap: 18 }}>
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 14,
+                    padding: 16,
+                  }}
+                >
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: 18 }}>🎯 Recomendaciones por intereses</h3>
+                  <p style={{ margin: '0 0 12px 0', color: '#ffffff99', fontSize: 13 }}>
+                    Perfiles sugeridos en base a tu actividad en FPConnect.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                    {recommendedByInterests.length === 0 && (
+                      <p style={{ color: '#ffffff80' }}>No hay recomendaciones nuevas por ahora.</p>
+                    )}
+                    {recommendedByInterests.slice(0, 9).map((recommendedUser) => (
+                      <UserCard
+                        key={recommendedUser.id}
+                        user={recommendedUser}
+                        isFollowing={!!following?.find((u) => u.id === recommendedUser.id)}
+                        onFollow={() => handleFollowUser(recommendedUser.id)}
+                        onUnfollow={() => handleUnfollowUser(recommendedUser.id)}
+                        onOpenProfile={handleOpenProfile}
+                      />
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* EXPLORE TAB */}
-        {activeTab === 'explore' && (
+        {!viewedProfileId && activeTab === 'explore' && (
           <div>
             {/* SUBTABS PARA EXPLORE */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 12 }}>
@@ -445,6 +667,54 @@ export default function AlumnoApp() {
                   {subTab.label}
                 </button>
               ))}
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 12, color: '#ffffffb3', marginBottom: 10 }}>
+                Filtro rápido por provincia
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setExploreProvinceQuickFilter('ALL')}
+                  style={{
+                    padding: '7px 12px',
+                    borderRadius: 999,
+                    border: exploreProvinceQuickFilter === 'ALL'
+                      ? '1px solid rgba(0, 168, 120, 0.8)'
+                      : '1px solid rgba(255,255,255,0.18)',
+                    background: exploreProvinceQuickFilter === 'ALL'
+                      ? 'rgba(0, 168, 120, 0.2)'
+                      : 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Todas
+                </button>
+                {ANDALUCIA_PROVINCES.map((province) => (
+                  <button
+                    key={province}
+                    onClick={() => setExploreProvinceQuickFilter(province)}
+                    style={{
+                      padding: '7px 12px',
+                      borderRadius: 999,
+                      border: exploreProvinceQuickFilter === province
+                        ? '1px solid rgba(0, 168, 120, 0.8)'
+                        : '1px solid rgba(255,255,255,0.18)',
+                      background: exploreProvinceQuickFilter === province
+                        ? 'rgba(0, 168, 120, 0.2)'
+                        : 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                    }}
+                  >
+                    {province[0] + province.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* CENTROS */}
@@ -505,7 +775,7 @@ export default function AlumnoApp() {
                     onChange={(e) => {
                       const value = e.target.value;
                       setCenterQuery(value);
-                      search(value.trim() || '*', 1, 50, 'CENTRO');
+                      search(value.trim() || 'all', 1, 50, 'CENTRO');
                     }}
                     style={{
                       width: '100%',
@@ -600,20 +870,8 @@ export default function AlumnoApp() {
                     {filteredCenters.map((searchUser) => {
                       const cicles = parseCicles(searchUser.centerProfile?.cicles);
                       return (
-                        <div key={searchUser.id} style={{ display: 'grid', gap: 10 }}>
-                          <UserCard
-                            user={searchUser}
-                            actions={false}
-                          />
-
-                          <div
-                            style={{
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              background: 'rgba(255,255,255,0.03)',
-                              borderRadius: 10,
-                              padding: 10,
-                            }}
-                          >
+                        <UserCard key={searchUser.id} user={searchUser} actions={false} onOpenProfile={handleOpenProfile}>
+                          <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: 'auto' }}>
                             <div style={{ fontSize: 12, color: '#ffffffcc', marginBottom: 6 }}>
                               📍 {searchUser.centerProfile?.city || 'Ciudad no indicada'}
                               {searchUser.centerProfile?.province ? `, ${searchUser.centerProfile.province}` : ''}
@@ -661,8 +919,28 @@ export default function AlumnoApp() {
                                   ? 'Vinculando...'
                                   : 'Vincularme a este centro'}
                             </button>
+
+                            <button
+                              onClick={() => handleUnfollowUser ? (following?.find(u => u.id === searchUser.id) ? handleUnfollowUser(searchUser.id) : handleFollowUser(searchUser.id)) : handleFollowUser(searchUser.id)}
+                              style={{
+                                marginTop: 10,
+                                width: '100%',
+                                padding: '9px 10px',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: following?.find(u => u.id === searchUser.id)
+                                  ? 'rgba(255, 255, 255, 0.15)'
+                                  : 'linear-gradient(135deg, #007a57, #004c36)',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                fontSize: 12,
+                              }}
+                            >
+                              {following?.find(u => u.id === searchUser.id) ? '✓ Siguiendo' : '+ Seguir Centro'}
+                            </button>
                           </div>
-                        </div>
+                        </UserCard>
                       );
                     })}
                   </div>
@@ -686,7 +964,7 @@ export default function AlumnoApp() {
                     onChange={(e) => {
                       const value = e.target.value;
                       setEnterpriseQuery(value);
-                      search(value.trim() || '*', 1, 50, 'EMPRESA');
+                      search(value.trim() || 'all', 1, 50, 'EMPRESA');
                     }}
                     style={{
                       width: '100%',
@@ -704,7 +982,7 @@ export default function AlumnoApp() {
                   />
 
                   <div style={{ fontSize: 12, color: '#ffffffb3' }}>
-                    Mostrando {(searchResults || []).filter((user) => user.role === 'EMPRESA').length} empresas disponibles
+                    Mostrando {filteredEnterprises.length} empresas disponibles
                   </div>
                 </div>
 
@@ -714,24 +992,15 @@ export default function AlumnoApp() {
                   </p>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                    {(searchResults || []).filter((user) => user.role === 'EMPRESA').length === 0 && (
+                    {filteredEnterprises.length === 0 && (
                       <p style={{ color: '#ffffff66', gridColumn: '1 / -1', textAlign: 'center', padding: 40 }}>
                         🔍 No hay empresas disponibles
                       </p>
                     )}
 
-                    {(searchResults || []).filter((user) => user.role === 'EMPRESA').map((enterprise) => (
-                      <div key={enterprise.id} style={{ display: 'grid', gap: 10 }}>
-                        <UserCard user={enterprise} actions={false} />
-
-                        <div
-                          style={{
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
-                            borderRadius: 10,
-                            padding: 10,
-                          }}
-                        >
+                    {filteredEnterprises.map((enterprise) => (
+                      <UserCard key={enterprise.id} user={enterprise} actions={false} onOpenProfile={handleOpenProfile}>
+                        <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: 'auto' }}>
                           <div style={{ fontSize: 12, color: '#ffffffcc', marginBottom: 6 }}>
                             🏭 {enterprise.enterpriseProfile?.industry || 'Sector no indicado'}
                           </div>
@@ -743,7 +1012,7 @@ export default function AlumnoApp() {
                           </div>
 
                           <button
-                            onClick={() => handleFollowUser(enterprise.id)}
+                            onClick={() => handleUnfollowUser && following?.find(u => u.id === enterprise.id) ? handleUnfollowUser(enterprise.id) : handleFollowUser(enterprise.id)}
                             style={{
                               width: '100%',
                               padding: '9px 10px',
@@ -761,7 +1030,7 @@ export default function AlumnoApp() {
                             {following?.find(u => u.id === enterprise.id) ? '✓ Siguiendo' : '+ Seguir Empresa'}
                           </button>
                         </div>
-                      </div>
+                      </UserCard>
                     ))}
                   </div>
                 )}
@@ -784,7 +1053,7 @@ export default function AlumnoApp() {
                     onChange={(e) => {
                       const value = e.target.value;
                       setStudentQuery(value);
-                      search(value.trim() || '*', 1, 50, 'ALUMNO');
+                      search(value.trim() || 'all', 1, 50, 'ALUMNO');
                     }}
                     style={{
                       width: '100%',
@@ -802,7 +1071,7 @@ export default function AlumnoApp() {
                   />
 
                   <div style={{ fontSize: 12, color: '#ffffffb3' }}>
-                    Mostrando {(searchResults || []).filter((user) => user.role === 'ALUMNO').length} alumnos disponibles
+                    Mostrando {filteredStudents.length} alumnos disponibles
                   </div>
                 </div>
 
@@ -812,24 +1081,15 @@ export default function AlumnoApp() {
                   </p>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                    {(searchResults || []).filter((user) => user.role === 'ALUMNO').length === 0 && (
+                    {filteredStudents.length === 0 && (
                       <p style={{ color: '#ffffff66', gridColumn: '1 / -1', textAlign: 'center', padding: 40 }}>
                         🔍 No hay alumnos disponibles
                       </p>
                     )}
 
-                    {(searchResults || []).filter((user) => user.role === 'ALUMNO').map((student) => (
-                      <div key={student.id} style={{ display: 'grid', gap: 10 }}>
-                        <UserCard user={student} actions={false} />
-
-                        <div
-                          style={{
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
-                            borderRadius: 10,
-                            padding: 10,
-                          }}
-                        >
+                    {filteredStudents.map((student) => (
+                      <UserCard key={student.id} user={student} actions={false} onOpenProfile={handleOpenProfile}>
+                        <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: 'auto' }}>
                           <div style={{ fontSize: 12, color: '#ffffffcc', marginBottom: 6 }}>
                             📚 {student.studentProfile?.cicle || 'Ciclo no indicado'}
                           </div>
@@ -856,7 +1116,7 @@ export default function AlumnoApp() {
                           )}
 
                           <button
-                            onClick={() => handleFollowUser(student.id)}
+                            onClick={() => handleUnfollowUser ? (following?.find(u => u.id === student.id) ? handleUnfollowUser(student.id) : handleFollowUser(student.id)) : handleFollowUser(student.id)}
                             style={{
                               width: '100%',
                               padding: '9px 10px',
@@ -874,12 +1134,78 @@ export default function AlumnoApp() {
                             {following?.find(u => u.id === student.id) ? '✓ Siguiendo' : '+ Seguir Alumno'}
                           </button>
                         </div>
-                      </div>
+                      </UserCard>
                     ))}
                   </div>
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {!viewedProfileId && activeTab === 'news' && (
+          <div>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: 24 }}>📰 Noticias FP</h2>
+            <p style={{ margin: '0 0 22px 0', color: '#ffffff99', fontSize: 14 }}>
+              Becas, convocatorias y oportunidades para alumnado de Formacion Profesional.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+              {FP_NEWS_ITEMS.map((item) => (
+                <article
+                  key={item.id}
+                  style={{
+                    borderRadius: 14,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: 16,
+                    display: 'grid',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        borderRadius: 999,
+                        padding: '4px 9px',
+                        background: 'rgba(0,168,120,0.2)',
+                        border: '1px solid rgba(0,168,120,0.5)',
+                        color: '#d3ffef',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {item.category}
+                    </span>
+                    <span style={{ color: '#ffffff88', fontSize: 12 }}>{item.source}</span>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>{item.title}</h3>
+                  <p style={{ margin: 0, color: '#ffffffcc', fontSize: 14, lineHeight: 1.5 }}>
+                    {item.summary}
+                  </p>
+                  <div style={{ color: '#ffffffa8', fontSize: 12 }}>{item.deadline}</div>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.24)',
+                      color: '#fff',
+                      padding: '8px 12px',
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      width: 'fit-content',
+                    }}
+                  >
+                    Ver convocatoria
+                  </a>
+                </article>
+              ))}
+            </div>
           </div>
         )}
       </div>

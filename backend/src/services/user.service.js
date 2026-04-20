@@ -285,6 +285,22 @@ export const userService = {
         bio: true,
         location: true,
         role: true,
+        studentProfile: {
+          select: {
+            cicle: true,
+            specialization: true,
+            skills: true,
+            seekingJob: true,
+          },
+        },
+        enterpriseProfile: {
+          select: {
+            companyName: true,
+            industry: true,
+            city: true,
+            description: true,
+          },
+        },
         centerProfile: {
           select: {
             centerName: true,

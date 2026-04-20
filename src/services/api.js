@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const resolvedHostname = window.location.hostname || 'localhost';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${resolvedHostname}:3000/api`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
  * Cliente HTTP para comunicación con backend

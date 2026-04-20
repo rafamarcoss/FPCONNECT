@@ -38,7 +38,17 @@ npm run dev
 | **Deploy frontend** | Vercel | Optimizado React, edge functions |
 | **App escritorio** | Tauri 2 + React | Mismo código reutilizado, bundle pequeño |
 | **Mapa** | Leaflet.js + OpenStreetMap | Open source, sin licencia |
-| **Fuentes** | DM Sans (Google Fonts) | Tipografía moderna |
+| **Fuentes** | Inter (Google Fonts) | Sans Serif optimizada para UI y legibilidad |
+
+---
+
+## Novedades recientes (abril 2026)
+
+- Tipografia global migrada a Inter en todo el frontend.
+- Rediseño de Conexiones con subtabs de Siguiendo y Seguidores.
+- Nueva pestaña de Noticias FP con convocatorias y becas.
+- Vista de perfil publico tipo LinkedIn para usuarios.
+- Mejoras de feed: likes/comentarios, texto "Me gusta" y mensajes de estado.
 
 ---
 
