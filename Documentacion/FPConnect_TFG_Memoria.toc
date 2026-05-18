@@ -1,0 +1,92 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {chapter}{Resumen}{4}{chapter*.1}%
+\contentsline {chapter}{Glosario}{5}{chapter*.2}%
+\contentsline {chapter}{\numberline {1}Planteamiento del Problema y Justificación}{7}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Contexto del sector}{7}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Necesidades identificadas}{7}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Ausencia de plataforma especializada}{7}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Dificultad en la búsqueda de prácticas y empleo}{7}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}Falta de networking sectorial}{8}{subsection.1.2.3}%
+\contentsline {subsection}{\numberline {1.2.4}Comunicación fragmentada entre actores}{8}{subsection.1.2.4}%
+\contentsline {section}{\numberline {1.3}Análisis de soluciones existentes}{8}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}LinkedIn}{8}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Portales de empleo generales (Indeed, Infojobs)}{8}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Redes sociales genéricas}{8}{subsection.1.3.3}%
+\contentsline {section}{\numberline {1.4}Propuesta de valor de FPConnect}{8}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Fundamentación Teórica y Estado del Arte}{9}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Redes sociales profesionales: bases conceptuales}{9}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Arquitecturas web modernas}{9}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}Evolución de los frameworks frontend}{9}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Arquitectura REST y APIs}{10}{subsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.2.3}Comunicación en tiempo real: WebSockets}{10}{subsection.2.2.3}%
+\contentsline {section}{\numberline {2.3}Seguridad en aplicaciones web}{10}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}OWASP Top 10}{10}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Autenticación basada en tokens: JWT}{10}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}Almacenamiento seguro de contraseñas}{10}{subsection.2.3.3}%
+\contentsline {section}{\numberline {2.4}Bases de datos relacionales y ORM}{11}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Metodologías de desarrollo ágil}{11}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Objetivos}{12}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Objetivo principal}{12}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Objetivos específicos}{12}{section.3.2}%
+\contentsline {chapter}{\numberline {4}Metodología}{13}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Enfoque metodológico}{13}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Fases del proyecto}{13}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Fase 1: Análisis y diseño (semanas 1--2)}{13}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Fase 2: Configuración del entorno (semana 3)}{14}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Fase 3: Desarrollo del backend (semanas 4--6)}{14}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Fase 4: Desarrollo del frontend (semanas 7--9)}{15}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Fase 5: Testing y validación (semana 10)}{15}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.2.6}Fase 6: Documentación y despliegue (semanas 10--11)}{15}{subsection.4.2.6}%
+\contentsline {section}{\numberline {4.3}Herramientas utilizadas}{15}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Distribución temporal}{16}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Evaluación de costes}{16}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}Recursos humanos}{16}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}Tecnologías}{16}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}Infraestructura en producción}{16}{subsection.4.5.3}%
+\contentsline {chapter}{\numberline {5}Resultados}{17}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Arquitectura del sistema}{17}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Estructura real del proyecto}{17}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Correcciones respecto a la planificación inicial}{20}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Modelo de datos}{20}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Schema de Prisma}{20}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Relaciones entre entidades}{23}{subsection.5.4.2}%
+\contentsline {section}{\numberline {5.5}Implementación del backend}{23}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Punto de entrada del servidor}{23}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Configuración de Prisma como singleton}{24}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Middleware de autenticación JWT}{25}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Manejo centralizado de errores}{25}{subsection.5.5.4}%
+\contentsline {subsection}{\numberline {5.5.5}Utilidad responseHandler}{26}{subsection.5.5.5}%
+\contentsline {subsection}{\numberline {5.5.6}Controlador de autenticación}{26}{subsection.5.5.6}%
+\contentsline {subsection}{\numberline {5.5.7}Socket.io -- mensajería en tiempo real}{28}{subsection.5.5.7}%
+\contentsline {section}{\numberline {5.6}Implementación del frontend}{30}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}Cliente HTTP con interceptores}{30}{subsection.5.6.1}%
+\contentsline {subsection}{\numberline {5.6.2}Estado global con Zustand}{30}{subsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.6.3}Enrutamiento protegido por rol}{31}{subsection.5.6.3}%
+\contentsline {section}{\numberline {5.7}Seguridad}{34}{section.5.7}%
+\contentsline {subsection}{\numberline {5.7.1}Cabeceras HTTP y CORS}{34}{subsection.5.7.1}%
+\contentsline {subsection}{\numberline {5.7.2}Inyección SQL}{34}{subsection.5.7.2}%
+\contentsline {subsection}{\numberline {5.7.3}XSS}{34}{subsection.5.7.3}%
+\contentsline {subsection}{\numberline {5.7.4}Rate limiting}{34}{subsection.5.7.4}%
+\contentsline {subsection}{\numberline {5.7.5}Gestión de secretos}{34}{subsection.5.7.5}%
+\contentsline {section}{\numberline {5.8}Testing}{34}{section.5.8}%
+\contentsline {subsection}{\numberline {5.8.1}Estructura de tests}{34}{subsection.5.8.1}%
+\contentsline {subsection}{\numberline {5.8.2}Resultados}{35}{subsection.5.8.2}%
+\contentsline {subsection}{\numberline {5.8.3}Pruebas de rendimiento}{35}{subsection.5.8.3}%
+\contentsline {subsection}{\numberline {5.8.4}Pruebas de usabilidad}{35}{subsection.5.8.4}%
+\contentsline {section}{\numberline {5.9}Despliegue e infraestructura}{36}{section.5.9}%
+\contentsline {subsection}{\numberline {5.9.1}Entorno de desarrollo con Docker}{36}{subsection.5.9.1}%
+\contentsline {subsection}{\numberline {5.9.2}Pipeline de CI/CD con GitHub Actions}{37}{subsection.5.9.2}%
+\contentsline {chapter}{\numberline {6}Conclusiones}{38}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Grado de consecución de objetivos}{38}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Limitaciones}{38}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Futuras líneas de trabajo}{38}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Corto plazo (1--2 meses)}{38}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Medio plazo (3--6 meses)}{39}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Largo plazo (6+ meses)}{39}{subsection.6.3.3}%
+\contentsline {chapter}{\numberline {A}Anexo A: Referencia completa de endpoints de la API}{42}{appendix.Alph1}%
+\contentsline {chapter}{\numberline {B}Anexo B: Ejemplo de uso de la API con curl}{43}{appendix.Alph2}%
+\contentsline {chapter}{\numberline {A}Interfaces de Usuario}{44}{appendix.Alph1}%
+\contentsline {section}{\numberline {A.1}Página de Inicio y Autenticación}{44}{section.Alph1.1}%
+\contentsline {section}{\numberline {A.2}Interfaz para Alumnos}{45}{section.Alph1.2}%
+\contentsline {section}{\numberline {A.3}Interfaz para Empresas}{47}{section.Alph1.3}%
+\contentsline {section}{\numberline {A.4}Interfaz para Centros Educativos}{47}{section.Alph1.4}%

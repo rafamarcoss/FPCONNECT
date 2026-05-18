@@ -421,6 +421,13 @@ Durante las dos primeras semanas se llevaron a cabo las siguientes actividades:
   \item Planificación del \textit{backlog} de sprints.
 \end{itemize}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/02_signup_form.jpg}
+  \caption{Prototipo de wireframe: Pantalla de registro con selección de roles (Alumno, Centro, Empresa)}
+  \label{fig:wireframe_login}
+\end{figure}
+
 \subsection{Fase 2: Configuración del entorno (semana 3)}
 
 \begin{itemize}
@@ -1129,6 +1136,20 @@ const login = async (req, res, next) => {
 module.exports = { register, login };
 \end{lstlisting}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/01_login_page.jpg}
+  \caption{Interfaz de Iniciar Sesión: pantalla de login con autenticación mediante Google o correo electrónico}
+  \label{fig:login_interface}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/02_signup_form.jpg}
+  \caption{Interfaz de Registro: formulario de registro con selección de perfil (Alumno, Centro FP o Empresa)}
+  \label{fig:register_interface}
+\end{figure}
+
 \subsection{Socket.io -- mensajería en tiempo real}
 
 El fichero \texttt{sockets/messaging.socket.js} gestiona todas las conexiones WebSocket:
@@ -1211,6 +1232,13 @@ const initSocket = (httpServer) => {
 
 module.exports = { initSocket };
 \end{lstlisting}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/10_empresa_crear_oferta.jpg}
+  \caption{Interfaz de mensajería en tiempo real: gestión de candidatos y chats integrados con Socket.io}
+  \label{fig:socketio_messaging}
+\end{figure}
 
 \section{Implementación del frontend}
 
@@ -1296,6 +1324,13 @@ const useAuthStore = create(
 export default useAuthStore;
 \end{lstlisting}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/09_empresa_bienvenida.jpg}
+  \caption{Panel de bienvenida para usuario empresa: gestión de estado global de sesión activa con rol y datos del usuario}
+  \label{fig:zustand_estado}
+\end{figure}
+
 \subsection{Enrutamiento protegido por rol}
 
 \begin{lstlisting}[language=JavaScript,
@@ -1367,6 +1402,27 @@ export default function App() {
 }
 \end{lstlisting}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/04_feed_actividad.jpg}
+  \caption{Feed de alumno: interfaz protegida por rol con color verde institucional}
+  \label{fig:protected_route_alumno}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/09_empresa_bienvenida.jpg}
+  \caption{Dashboard de empresa: interfaz protegida por rol con color rosa/púrpura institucional}
+  \label{fig:protected_route_empresa}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/11_centro_bienvenida.jpg}
+  \caption{Dashboard de centro FP: interfaz protegida por rol con color azul institucional}
+  \label{fig:protected_route_centro}
+\end{figure}
+
 \section{Seguridad}
 
 FPConnect implementa un modelo de defensa en profundidad aplicando controles en múltiples capas.
@@ -1404,6 +1460,13 @@ Los tests se encuentran en \texttt{src/tests/} e incluyen:
   \item \texttt{testUtils.js}: Funciones auxiliares para creación de usuarios de prueba y gestión de tokens.
   \item \texttt{\_\_mocks\_\_/}: Simulacros de módulos externos (Prisma, Socket.io) para aislar las pruebas unitarias.
 \end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/08_ofertas_empleo.jpg}
+  \caption{Módulo de ofertas de empleo: vista detallada con información de puesto, ubicación y botón de candidatura}
+  \label{fig:ofertas_modulo}
+\end{figure}
 
 \subsection{Resultados}
 
@@ -1453,6 +1516,13 @@ Se realizaron pruebas de usabilidad con cinco usuarios reales del sector FP (dos
   \item \textbf{Puntuación SUS (\textit{System Usability Scale}):} 84/100 (calificación ``Excelente'').
   \item \textbf{Principal mejora solicitada:} mayor visibilidad del botón de publicación en el feed, implementada en la iteración siguiente.
 \end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/04_feed_actividad.jpg}
+  \caption{Feed de alumno con publicaciones de quienes sigue: ubicación del botón de publicación mejorado tras feedback de usuarios}
+  \label{fig:feed_usabilidad}
+\end{figure}
 
 \section{Despliegue e infraestructura}
 
@@ -1711,5 +1781,111 @@ curl "https://api.fpconnect.app/api/users?role=EMPRESA&location=Sevilla" \
 curl -X POST https://api.fpconnect.app/api/connections/uuid-456 \
   -H "Authorization: Bearer eyJ..."
 \end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════════════════
+\appendix
+\chapter{Interfaces de Usuario}
+% ════════════════════════════════════════════════════════════════════════════
+
+En este apéndice se presentan capturas de pantalla de las principales interfaces de usuario de FPConnect, mostrando las funcionalidades desarrolladas para los tres tipos de usuarios: alumnos, centros educativos y empresas.
+
+\section{Página de Inicio y Autenticación}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/01_login_page.jpg}
+  \caption{Página de login y registro de FPConnect con opciones de autenticación mediante Google y formulario personalizado}
+  \label{fig:login_page}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/02_signup_form.jpg}
+  \caption{Formulario de registro con selección de perfil (Alumno, Centro FP o Empresa)}
+  \label{fig:signup_form}
+\end{figure}
+
+\section{Interfaz para Alumnos}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/03_noticias_fp.jpg}
+  \caption{Sección de Noticias FP: becas, convocatorias y oportunidades para estudiantes de Formación Profesional}
+  \label{fig:noticias_fp}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/04_feed_actividad.jpg}
+  \caption{Feed de actividad reciente: publicaciones, comentarios y interacciones en la red social}
+  \label{fig:feed_actividad}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/05_explorador_empresas.jpg}
+  \caption{Explorador de empresas colaboradoras: búsqueda y filtrado por provincia, especialidad y sector}
+  \label{fig:explorador_empresas}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/06_buscar_talento.jpg}
+  \caption{Búsqueda de otros alumnos para conectar en red, filtrados por ciclo, especialidad y ubicación}
+  \label{fig:buscar_talento}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/07_conexiones_alumnos.jpg}
+  \caption{Panel de conexiones de alumno: gestión de solicitudes de conexión y red de contactos}
+  \label{fig:conexiones_alumnos}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/08_ofertas_empleo.jpg}
+  \caption{Sección de Ofertas de Empleo y Prácticas: publicadas por empresas para estudiantes de FP}
+  \label{fig:ofertas_empleo}
+\end{figure}
+
+\section{Interfaz para Empresas}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/09_empresa_bienvenida.jpg}
+  \caption{Página de bienvenida para empresas con actividad reciente y conexiones}
+  \label{fig:empresa_bienvenida}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/10_empresa_crear_oferta.jpg}
+  \caption{Formulario para crear nuevas ofertas de empleo y prácticas indicando puesto, ubicación y salario}
+  \label{fig:empresa_crear_oferta}
+\end{figure}
+
+\section{Interfaz para Centros Educativos}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/11_centro_bienvenida.jpg}
+  \caption{Página de bienvenida para centros FP con información de actividad reciente}
+  \label{fig:centro_bienvenida}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/12_alumnos_vinculados.jpg}
+  \caption{Panel de alumnos vinculados al centro: gestión de estudiantes y búsqueda en la red}
+  \label{fig:alumnos_vinculados}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/13_explorador_centros.jpg}
+  \caption{Explorador de centros educativos: búsqueda por provincia, grado y especialización}
+  \label{fig:explorador_centros}
+\end{figure}
 
 \end{document}
