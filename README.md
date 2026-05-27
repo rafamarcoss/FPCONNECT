@@ -92,11 +92,11 @@ git clone https://github.com/rafamarcoss/FPCONNECT.git
 cd FPCONNECT
 
 # Frontend / Electron
-npm install
+npm ci
 
 # Backend
 cd backend
-npm install
+npm ci
 cd ..
 ```
 
@@ -266,6 +266,7 @@ La suite cubre flujos de autenticación, creación/interacción con publicacione
 ## Higiene del repositorio
 
 - Las dependencias instaladas **no se versionan**: `node_modules/` está excluido en `.gitignore` para el proyecto raíz y para paquetes anidados como `backend/`.
+- Los lockfiles de frontend y backend sí se versionan para asegurar instalaciones reproducibles y auditorías fiables.
 - Los archivos de entorno locales (`.env`, `.env.local`) tampoco se suben; solo se versionan las plantillas `.env.example`.
 - Los builds (`dist/`, `release/`) se generan localmente o en CI.
 
