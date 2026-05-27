@@ -29,7 +29,7 @@ coverage
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
+# Installed dependency directories (root and nested packages such as backend/)
 node_modules/
 
 # TypeScript v1 declaration files
@@ -47,8 +47,10 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# dotenv environment variables file
+# dotenv environment variable files (keep local configuration out of Git)
 .env
+.env.local
+.env.*.local
 
 # gatsby files
 .cache/
